@@ -1,0 +1,65 @@
+from ..bankstruct import *
+from ..constants import AudioSampleCodec, AudioStorageMedium
+from ..helpers import safe_enum
+
+from .vadpcm import VadpcmLoop, VadpcmBook
+
+class SampleFlags:
+    __slots__ = ('unk_0', '_codec', '_medium', '_is_cached', '_is_relocated', 'size')
+
+    def __init__(self, unk_0, codec, medium, is_cached, is_relocated, size):
+        self.unk_0 = unk_0
+        self._codec = codec
+        self._medium = medium
+        self._is_cached = is_cached
+        self._is_relocated = is_relocated
+        self.size = size
+
+    @property
+    def codec(self):
+        return safe_enum(AudioSampleCodec, self._codec)
+
+    @property
+    def medium(self):
+        return safe_enum(AudioStorageMedium, self._medium)
+
+    @property
+    def is_cached(self):
+        return bool(self._is_cached)
+
+    @property
+    def is_relocated(self):
+        return bool(self._is_relocated)
+
+class Sample(BankStruct):
+    """
+    Represents audio sample data in the instrument bank.
+
+    .. code-block:: c
+
+        typdef struct Sample {
+            /* 0x00 */ u32 unk_0: 1;
+            /* 0x00 */ u32 codec: 3;
+            /* 0x00 */ u32 medium: 2;
+            /* 0x00 */ u32 isCached: 1;
+            /* 0x00 */ u32 isRelocated: 1;
+            /* 0x00 */ u32 size: 24;
+            /* 0x04 */ u8* sampleAddr;
+            /* 0x08 */ u32 VadpcmLoop* loop;
+            /* 0x0C */ u32 VadpcmBook* book;
+        } Sample; // Size = 0x10
+    """
+    _fields_ = [
+        ('flags', SampleFlags, [
+            ('unk_0', u32, 1),
+            ('codec', u32, 3),
+            ('medium', u32, 2),
+            ('is_cached', u32, 1),
+            ('is_relocated', u32, 1),
+            ('size', u32, 24),
+        ]),
+        ('sample_addr', u32),
+        ('loop', pointer(VadpcmLoop)),
+        ('book', pointer(VadpcmBook))
+    ]
+    # _align_ = 0x10
