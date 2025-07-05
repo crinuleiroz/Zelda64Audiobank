@@ -56,6 +56,8 @@ class Envelope(BankStruct):
         obj = cls()
         offset = struct_offset
 
+        # Loop through the array and create EnvelopePoint objects for each point
+        # in the array until it hits an opcode. The game handles the array similarly.
         while True:
             point = EnvelopePoint.from_bytes(buffer, offset)
             obj.points.append(point)

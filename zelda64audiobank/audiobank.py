@@ -36,6 +36,10 @@ class Audiobank:
         Returns:
             object (Audiobank): A fully parsed instrument bank.
         """
+        # There are two table_entry lengths possible at the current time taking OOTR and MMR music into account.
+        # The regular table_entry length from the audiobank index in code is 16 bytes long and includes an address
+        # to the audiobank and its size in bytes. The truncated tables used by custom music files for OOTR and MMR
+        # are only 8 bytes long because the address and size are built by the randomizers.
         match len(table_entry):
             case 0x08:
                 _table_entry: bytes = (b'\x00' * 8) + table_entry
@@ -48,6 +52,11 @@ class Audiobank:
 
         obj.metadata = AudiobankEntry.from_bytes(_table_entry)
         obj.drum_list_offset, obj.effect_list_offset = struct.unpack('>2I', bank_data[:0x08])
+
+        # From this point, the from_bytes method will walk through every structure that has a pointer or data (effects)
+        # and fully instantiate every required child structure. Effects are just a TunedSample struct, so the effect list
+        # is just a list of TunedSample structs instead of a list of pointers to another struct. This means each entry is
+        # 8 bytes long instead of 4 bytes, because that is the size of the TunedSample struct.
 
         # Drums
         for i in range(0, obj.metadata.num_drums):
