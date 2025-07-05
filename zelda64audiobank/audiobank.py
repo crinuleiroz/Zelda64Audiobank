@@ -36,12 +36,13 @@ class Audiobank:
         Returns:
             object (Audiobank): A fully parsed instrument bank.
         """
-        if len(table_entry) == 0x08:
-            _table_entry: bytes = (b'\x00' * 8) + table_entry
-        elif len(table_entry) == 0x10:
-            _table_entry: bytes = table_entry
-        else:
-            raise ValueError(f'Unexpected table entry size, expected 0x08 or 0x10 bytes, but got {hex(len(table_entry))} bytes instead!')
+        match len(table_entry):
+            case 0x08:
+                _table_entry: bytes = (b'\x00' * 8) + table_entry
+            case 0x10:
+                _table_entry: bytes = table_entry
+            case _:
+                raise ValueError(f'Unexpected table entry size, expected 0x08 or 0x10 bytes, but got {hex(len(table_entry))} bytes instead!')
 
         obj = cls()
 
@@ -70,3 +71,6 @@ class Audiobank:
                 obj.instruments.append(Instrument.from_bytes(bank_data, instrument_offset))
 
         return obj
+
+    def __repr__(self):
+        ...

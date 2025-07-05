@@ -36,17 +36,3 @@ class AudiobankEntry(BankStruct):
         'cache_load_type': AudioCacheLoadType
     }
     # _align_ = 0x10
-
-    def __repr__(self):
-        r = f'''\
-AudiobankEntry(BankStruct):
-  rom_addr: 0x{self.rom_addr:04X}
-  bank_size: 0x{self.bank_size:04X}
-  medium: {self.medium}
-  cache_load_type: {self.cache_load_type}
-  sample_bank_id_1: {self.sample_bank_id_1}
-  sample_bank_id_2: {self.sample_bank_id_2}
-  num_instruments: {self.num_instruments}
-  num_drums: {self.num_drums}
-  num_effects: {self.num_effects}'''
-        return r

@@ -31,6 +31,18 @@ class SampleFlags:
     def is_relocated(self):
         return bool(self._is_relocated)
 
+    def __repr__(self):
+        return (
+            f'SampleFlags(\n'
+            f'    unk_0={self.unk_0},\n'
+            f'    codec={self.codec},\n'
+            f'    medium={self.medium},\n'
+            f'    is_cached={self.is_cached},\n'
+            f'    is_relocated={self.is_relocated},\n'
+            f'    size={self.size}\n'
+            '  )'
+        )
+
 class Sample(BankStruct):
     """
     Represents audio sample data in the instrument bank.

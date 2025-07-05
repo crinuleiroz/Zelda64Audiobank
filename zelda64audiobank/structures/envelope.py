@@ -15,25 +15,29 @@ class EnvelopePoint(BankStruct):
         } EnvelopePoint; // Size = 0x04
     """
     _fields_ = [
-        ('_timeOrOpcode', s16),
-        ('ampOrIndex', s16)
+        ('_time_or_opcode', s16),
+        ('amp_or_index', s16)
     ]
 
     @property
-    def timeOrOpcode(self):
-        val = self._timeOrOpcode
+    def time_or_opcode(self):
+        val = self._time_or_opcode
 
         if val <= 0:
-            try:
-                return AdsrOpcode(val)
-            except ValueError:
-                return val
+            return safe_enum(AdsrOpcode, val)
         else:
             return val
 
     @property
     def is_opcode(self):
-        return self._timeOrOpcode <= 0
+        return self._time_or_opcode <= 0
+
+    def __repr__(self):
+        return (
+            f'{type(self).__name__}('
+            f'time_or_opcode={self.time_or_opcode}, '
+            f'amp_or_index={self.amp_or_index}'
+        )
 
 class Envelope(BankStruct):
     """
@@ -61,3 +65,9 @@ class Envelope(BankStruct):
                 break
 
         return obj
+
+    def __repr__(self):
+        if not self.points:
+            return f'{type(self).__name__}([])'
+        points_repr = ',\n '.join(repr(p) for p in self.points)
+        return f'{type(self).__name__}([\n {points_repr}\n])'

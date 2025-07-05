@@ -32,16 +32,3 @@ class Instrument(BankStruct):
     ]
     _bool_fields_ = ['is_relocated']
     # _align_ = 0x10
-
-    def __repr__(self):
-        fields_repr = []
-        for field_name, _, in self._fields_:
-            value = getattr(self, field_name, None)
-
-            if isinstance(value, pointer):
-                val_repr = repr(value)
-            else:
-                val_repr = repr(value)
-
-            fields_repr.append(f'{field_name}={val_repr}')
-        return f'{self.__class__.__name__}({', '.join(fields_repr)})'

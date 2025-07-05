@@ -100,6 +100,7 @@ class array(FieldType):
     def __init__(self, field_type: Type['FieldType'], length: int):
         self.field_type = field_type
         self.length = length
+        self.items = []
 
     @property
     def size(self):
@@ -205,50 +206,51 @@ class BankStruct:
         last_bitfield_type = None
 
         for field in cls._fields_:
-            if len(field) == 2:
-                name, field_type = field
+            match len(field):
+                case 2:
+                    name, field_type = field
 
-                # Reset bitfield tracking
-                bit_cursor = 0
-                last_bitfield_type = None
-
-                field_offset = cls._align_to(field_offset, cls._align_)
-                value, size = cls._read_field(buffer, field_offset, field_type)
-                setattr(obj, name, value)
-                field_offset += size
-
-            elif len(field) == 3:
-                name, container_type, subfields = field
-                if isinstance(subfields, list):
-                    values = {}
-                    base_type = subfields[0][1]
-                    bit_cursor = 0
-                    for subname, sub_type, sub_bits in subfields:
-                        assert sub_type == base_type, "Grouped bitfields must use the same base type."
-                        bitfield_type = bitfield(sub_type, sub_bits)
-                        bitfield_value = bitfield_type.from_bytes(buffer, field_offset, bit_cursor)
-                        values[subname] = bitfield_value
-                        bit_cursor += sub_bits
-
-                    setattr(obj, name, container_type(**values))
-                    field_offset += base_type.size
+                    # Reset bitfield tracking
                     bit_cursor = 0
                     last_bitfield_type = None
-                else:
-                    name, base_type, bit_width = field
-                    if last_bitfield_type != base_type:
+
+                    field_offset = cls._align_to(field_offset, cls._align_)
+                    value, size = cls._read_field(buffer, field_offset, field_type)
+                    setattr(obj, name, value)
+                    field_offset += size
+
+                case 3:
+                    name, container_type, subfields = field
+                    if isinstance(subfields, list):
+                        values = {}
+                        base_type = subfields[0][1]
                         bit_cursor = 0
-                        last_bitfield_type = base_type
+                        for subname, sub_type, sub_bits in subfields:
+                            assert sub_type == base_type, "Grouped bitfields must use the same base type."
+                            bitfield_type = bitfield(sub_type, sub_bits)
+                            bitfield_value = bitfield_type.from_bytes(buffer, field_offset, bit_cursor)
+                            values[subname] = bitfield_value
+                            bit_cursor += sub_bits
 
-                    bitfield_type = bitfield(base_type, bit_width)
-                    bitfield_value = bitfield_type.from_bytes(buffer, field_offset, bit_cursor)
-                    setattr(obj, name, bitfield_value)
-
-                    bit_cursor += bit_width
-                    if bit_cursor >= base_type.size * 8:
+                        setattr(obj, name, container_type(**values))
                         field_offset += base_type.size
                         bit_cursor = 0
                         last_bitfield_type = None
+                    else:
+                        name, base_type, bit_width = field
+                        if last_bitfield_type != base_type:
+                            bit_cursor = 0
+                            last_bitfield_type = base_type
+
+                        bitfield_type = bitfield(base_type, bit_width)
+                        bitfield_value = bitfield_type.from_bytes(buffer, field_offset, bit_cursor)
+                        setattr(obj, name, bitfield_value)
+
+                        bit_cursor += bit_width
+                        if bit_cursor >= base_type.size * 8:
+                            field_offset += base_type.size
+                            bit_cursor = 0
+                            last_bitfield_type = None
 
         for bool_field in getattr(cls, '_bool_fields_', []):
             raw_value = getattr(obj, bool_field)
@@ -270,22 +272,36 @@ class BankStruct:
     def size(cls):
         size = 0
         for f in cls._fields_:
-            if len(f) == 2:
-                _, field_type = f
+            match len(f):
+                case 2:
+                    _, field_type = f
 
-                if inspect.isclass(field_type) and issubclass(field_type, BankStruct):
-                    size += field_type.size()
-                elif isinstance(field_type, pointer):
-                    size += 4
-                elif isinstance(field_type, array):
-                    size += field_type.size
-                else:
-                    size += field_type.size
+                    if inspect.isclass(field_type) and issubclass(field_type, BankStruct):
+                        size += field_type.size()
+                    elif isinstance(field_type, pointer):
+                        size += 4
+                    elif isinstance(field_type, array):
+                        size += field_type.size
+                    else:
+                        size += field_type.size
 
-            elif len(f) == 3:
-                if isinstance(f[2], list):
-                    _, _, subfields = f
-                    size += subfields[0][1].size
-                else:
-                    pass
+                case 3:
+                    if isinstance(f[2], list):
+                        _, _, subfields = f
+                        size += subfields[0][1].size
+                    else:
+                        pass
         return size
+
+    def __repr__(self):
+        lines = [f'{type(self).__name__}(']
+        for field in self._fields_:
+            name = field[0]
+            value = getattr(self, name)
+            if isinstance(value, BankStruct):
+                value_repr = repr(value).replace('\n', '\n  ')
+                lines.append(f'  {name}={value_repr}')
+            else:
+                lines.append(f'  {name}={value}')
+        lines.append(')')
+        return '\n'.join(lines)

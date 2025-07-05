@@ -64,6 +64,23 @@ class VadpcmLoop(BankStruct):
 
         return obj
 
+    def __repr__(self):
+        header_repr = repr(self.header).replace('\n', '\n  ')
+        if not self.predictors or len(self.predictors) == 0:
+            preds = '[]'
+        else:
+            grouped = [
+                ', '.join(f'{v}' for v in self.predictors[i:i+4])
+                for i in range(0, len(self.predictors), 4)
+            ]
+            preds = '[\n' + '\n'.join(f'    {line},' for line in grouped) + '\n  ]'
+        return (
+            f'{type(self).__name__}(\n'
+            f'  header={header_repr}\n'
+            f'  predictors={preds}\n'
+            f')'
+        )
+
 class VadpcmBookHeader(BankStruct):
     """
     Represents the first 8 bytes of the VadpcmBook structure.
@@ -112,3 +129,21 @@ class VadpcmBook(BankStruct):
         obj.predictors = array(s16, total_coeff).from_bytes(buffer, predictor_offset)
 
         return obj
+
+    def __repr__(self):
+        header_repr = repr(self.header).replace('\n', '\n  ')
+        if not self.predictors or len(self.predictors) == 0:
+            preds_repr = '[]'
+        else:
+            grouped = [
+                ', '.join(f'{v}' for v in self.predictors[i:i+4])
+                for i in range(0, len(self.predictors), 4)
+            ]
+            preds_repr = '[\n' + '\n'.join(f'    {line},' for line in grouped) + '\n  ]'
+
+        return (
+            f'{type(self).__name__}(\n'
+            f'  header={header_repr}\n'
+            f'  predictors={preds_repr}\n'
+            f')'
+        )
